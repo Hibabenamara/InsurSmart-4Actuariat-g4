@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.insursmart.claimservice.dto.*;
 import tn.esprit.insursmart.claimservice.service.ClaimService;
-
+import org.springframework.beans.factory.annotation.Value;
 import java.net.URI;
 import java.util.List;
 
@@ -27,9 +27,12 @@ public class ClaimController {
 
     private final ClaimService claimService;
 
+    @Value("${server.port}")
+    private String port;
+
     @GetMapping("/hello")
     public String hello() {
-        return "Hello I'm Claim Service";
+        return "Hello I'm Claim Service on port " + port;
     }
 
     /** 201 | 400 | 404 | 409 | 503 */

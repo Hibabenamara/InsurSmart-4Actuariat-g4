@@ -1,19 +1,29 @@
 package tn.esprit.insursmart.claimservice.service;
 
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import tn.esprit.insursmart.claimservice.exception.ServiceUnavailableException;
 
-/**
- * Verifie que le contrat est ACTIVE et appartient au client.
- * MOCK pour le palier S5 : a remplacer en S6 par un client OpenFeign vers
- * GET /internal/contracts/{id}/eligibility (contract-service), avec circuit breaker :
- *  - contract-service injoignable  -> throw new ServiceUnavailableException(...)      (503)
- *  - contrat non eligible          -> throw new InvalidStatusTransitionException(...) (409)
- *  - contrat inexistant            -> throw new ResourceNotFoundException(...)        (404)
- */
 @Service
 public class ContractEligibilityService {
 
+    private final RestClient client;
+    private final CircuitBreakerFactory<?, ?> cbFactory;
+
+    public ContractEligibilityService(@LoadBalanced RestClient.Builder builder,
+                                      CircuitBreakerFactory<?, ?> cbFactory) {
+        this.client = builder.baseUrl("http://client-service").build();
+        this.cbFactory = cbFactory;
+    }
+
     public void assertEligible(Long contractId, String userId) {
-        // TODO S6 : appel OpenFeign
+        cbFactory.create("clientService").run(
+                () -> client.get().uri("/api/clients/hello").retrieve().toBodilessEntity(),
+                ex -> {
+                    throw new ServiceUnavailableException(
+                            "Service client indisponible, réessayez plus tard (fallback)");
+                });
     }
 }
