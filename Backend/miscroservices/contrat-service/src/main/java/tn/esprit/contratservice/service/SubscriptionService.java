@@ -23,11 +23,12 @@ public class SubscriptionService {
     private final SubscriptionRequestRepository subscriptionRepository;
     private final ContractRepository contractRepository;
     private final CatalogueService catalogueService;
-
+    private final tn.esprit.contratservice.service.ClientVerificationService clientVerificationService;
     @Transactional
     public SubscriptionResponse create(SubscriptionCreateRequest req, String userId, String role) {
         Roles.require(role, Roles.CLIENT);
         InsuranceType type = catalogueService.find(req.insuranceTypeId());
+        clientVerificationService.assertClientExists(userId);   // S1 : 503 si client-service indisponible
         SubscriptionRequest s = SubscriptionRequest.builder()
                 .userId(userId).requestedStart(req.requestedStart()).insuranceType(type)
                 .build();
